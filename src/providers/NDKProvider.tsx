@@ -22,6 +22,7 @@ const defaultRelays = [
   "wss://relay.damus.io",
   "wss://nos.lol",
   "wss://relay.nostr.band",
+  "wss://relay.primal.net",
 ];
 
 export const NDKProvider = ({ children }: { children: ReactNode }) => {
