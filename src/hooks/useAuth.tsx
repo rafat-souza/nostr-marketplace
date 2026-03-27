@@ -46,7 +46,11 @@ export const useAuth = () => {
         const { type, data } = nip19.decode(nsec);
         if (type !== "nsec") throw new Error("Invalid format");
 
-        const signer = new NDKPrivateKeySigner(data as string);
+        const hexKey = Array.from(data as Uint8Array)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+
+        const signer = new NDKPrivateKeySigner(hexKey);
         const user = await signer.user();
 
         if (user) {
