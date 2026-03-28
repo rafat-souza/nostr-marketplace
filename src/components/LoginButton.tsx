@@ -27,8 +27,11 @@ export function LoginButton() {
   if (currentUser) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm">
-          {currentUser.npub.slice(0, 10)}...{currentUser.npub.slice(-4)}
+        <span className="text-sm font-medium">
+          {currentUser.profile?.name ||
+            currentUser.profile?.displayName ||
+            `${currentUser.npub.slice(0, 10)}
+          ...${currentUser.npub.slice(-4)}`}
         </span>
         <button
           onClick={logout}

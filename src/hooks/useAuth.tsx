@@ -27,6 +27,8 @@ export const useAuth = () => {
       const user = await signer.user();
 
       if (user) {
+        user.ndk = ndk;
+        await user.fetchProfile();
         ndk.signer = signer;
         setCurrentUser(user);
       }
@@ -54,6 +56,8 @@ export const useAuth = () => {
         const user = await signer.user();
 
         if (user) {
+          user.ndk = ndk;
+          await user.fetchProfile();
           ndk.signer = signer;
           setCurrentUser(user);
         }
