@@ -21,7 +21,7 @@ const NDKContext = createContext<NDKContextType>({
 const defaultRelays = [
   "wss://relay.damus.io",
   "wss://nos.lol",
-  "wss://relay.nostr.band",
+  "wss://nostr.mom",
   "wss://relay.primal.net",
 ];
 
