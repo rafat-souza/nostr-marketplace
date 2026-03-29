@@ -9,13 +9,44 @@ export function NewListing() {
   const { ndk } = useNDK();
   const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     summary: "",
     price: "",
-    currency: "",
+    currency: "USD",
     locationName: "",
+    imageUrl: "",
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.append("fileToUpload", file);
+
+      const response = await fetch("https://nostr.build/api/v2/upload/free", {
+        method: "POST",
+        body: uploadData,
+      });
+
+      if (!response.ok) throw new Error("Media server error");
+
+      const result = await response.json();
+
+      if (result.data && result.data[0] && result.data[0].url) {
+        setFormData((prev) => ({ ...prev, imageUrl: result.data[0].url }));
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload image. Try again.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +83,7 @@ export function NewListing() {
 
       console.log("Geohash:", regionHash);
 
-      event.tags = [
+      const tags = [
         ["d", crypto.randomUUID()],
         ["title", formData.title],
         ["summary", formData.summary],
@@ -60,6 +91,12 @@ export function NewListing() {
         ["location", formData.locationName],
         ["g", regionHash],
       ];
+
+      if (formData.imageUrl) {
+        tags.push(["image", formData.imageUrl]);
+      }
+
+      event.tags = tags;
 
       const publishedRelays = await event.publish();
       console.log(
@@ -74,6 +111,7 @@ export function NewListing() {
         price: "",
         currency: "USD",
         locationName: "",
+        imageUrl: "",
       });
     } catch (error) {
       console.error("Failed to post: ", error);
@@ -167,9 +205,30 @@ export function NewListing() {
           />
         </div>
 
+        <div>
+          <label className="block text-sm mb-1">Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={isUploadingImage}
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+          />
+          {isUploadingImage && (
+            <p className="text-sm mt-2 text-primary">Uploading image...</p>
+          )}
+          {formData.imageUrl && !isUploadingImage && (
+            <img
+              src={formData.imageUrl}
+              alt="Preview"
+              className="mt-4 h-32 object-cover rounded border border-border"
+            />
+          )}
+        </div>
+
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isUploadingImage}
           className="mt-4 rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {isLoading ? "Publishing..." : "Publish product"}
