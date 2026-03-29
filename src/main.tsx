@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { NDKProvider } from "./providers/NDKProvider.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "./pages/Home.tsx";
+import { NewListing } from "./pages/NewListing.tsx";
 
 const router = createBrowserRouter([
   {
@@ -14,6 +15,10 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <Home />,
+      },
+      {
+        path: "/new",
+        element: <NewListing />,
       },
     ],
   },

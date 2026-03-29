@@ -19,7 +19,7 @@ export default function Home() {
 
     try {
       const geoResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(region)}`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(region)}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}`,
         {
           headers: { Accept: "application/json" },
         },
