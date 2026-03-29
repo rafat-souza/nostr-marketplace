@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import { LoginButton } from "./components/LoginButton";
 import { useNDK } from "./providers/NDKProvider";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "./providers/AuthProvider";
 
 import "./App.css";
 

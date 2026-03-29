@@ -1,11 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.tsx";
-import { NDKProvider } from "./providers/NDKProvider.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 import Home from "./pages/Home.tsx";
 import { NewListing } from "./pages/NewListing.tsx";
+import { AuthProvider } from "./providers/AuthProvider.tsx";
+import { NDKProvider } from "./providers/NDKProvider.tsx";
+import App from "./App.tsx";
+
+import "./index.css";
 
 const router = createBrowserRouter([
   {
@@ -27,7 +30,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <NDKProvider>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </NDKProvider>
   </StrictMode>,
 );

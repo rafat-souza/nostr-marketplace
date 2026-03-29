@@ -3,7 +3,7 @@ import { NDKEvent } from "@nostr-dev-kit/ndk";
 import * as geohash from "ngeohash";
 
 import { useNDK } from "../providers/NDKProvider";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../providers/AuthProvider";
 
 export function NewListing() {
   const { ndk } = useNDK();
