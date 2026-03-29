@@ -35,9 +35,9 @@ export default function Home() {
       const { lat, lon } = geoData[0];
 
       const regionHash = geohash.encode(parseFloat(lat), parseFloat(lon), 4); // 39km x 19km
-
+      console.log("Geohash:", regionHash);
       const filter = {
-        kinds: [30403],
+        kinds: [30402],
         "#g": [regionHash],
       };
 

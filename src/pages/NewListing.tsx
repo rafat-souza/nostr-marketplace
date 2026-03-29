@@ -50,6 +50,8 @@ export function NewListing() {
       event.kind = 30402;
       event.content = formData.summary;
 
+      console.log("Geohash:", regionHash);
+
       event.tags = [
         ["d", crypto.randomUUID()],
         ["title", formData.title],
@@ -59,7 +61,11 @@ export function NewListing() {
         ["g", regionHash],
       ];
 
-      await event.publish();
+      const publishedRelays = await event.publish();
+      console.log(
+        "Published in the following relays:",
+        Array.from(publishedRelays).map((r) => r.url),
+      );
       alert("Product posted succesfully!");
 
       setFormData({
