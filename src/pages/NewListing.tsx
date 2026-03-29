@@ -23,28 +23,62 @@ export function NewListing() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image too large. Max size is 5MB.");
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("fileToUpload", file);
+      const uploadUrl = "https://nostr.build/api/v2/upload/files";
 
-      const response = await fetch("https://nostr.build/api/v2/upload/free", {
+      const authEvent = new NDKEvent(ndk);
+      authEvent.kind = 27235;
+      authEvent.content = "";
+      authEvent.tags = [
+        ["u", uploadUrl],
+        ["method", "POST"],
+      ];
+      await authEvent.sign();
+
+      const authHeader = `Nostr ${btoa(JSON.stringify(authEvent.rawEvent()))}`;
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
+      const response = await fetch(uploadUrl, {
         method: "POST",
+        headers: {
+          Authorization: authHeader,
+        },
         body: uploadData,
       });
 
-      if (!response.ok) throw new Error("Media server error");
+      if (!response.ok)
+        throw new Error(`Media server error: ${response.status}`);
 
       const result = await response.json();
 
-      if (result.data && result.data[0] && result.data[0].url) {
+      if (result.status === "success" && result.nip94_event?.tags) {
+        const urlTag = result.nip94_event.tags.find(
+          (t: string[]) => t[0] === "url",
+        );
+        if (urlTag && urlTag[1]) {
+          setFormData((prev) => ({ ...prev, imageUrl: urlTag[1] }));
+        } else {
+          throw new Error("URL not found in NIP-96 response");
+        }
+      } else if (result.data && result.data[0] && result.data[0].url) {
         setFormData((prev) => ({ ...prev, imageUrl: result.data[0].url }));
+      } else {
+        throw new Error("Unexpected response format from the API");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Try again.");
+      alert("Failed to upload image. Please try again.");
     } finally {
       setIsUploadingImage(false);
+      e.target.value = "";
     }
   };
 
@@ -131,107 +165,190 @@ export function NewListing() {
 
   return (
     <div className="max-w-xl mx-auto bg-card p-6 rounded-lg shadow-sm border border-border">
-      <h2 className="text-2xl font-bold mb-6">Post new product</h2>
+      <h2 className="text-2xl font-bold mb-6">Post New Product</h2>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
-          <label className="block text-sm mb-1">Title</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">
+            Title
+          </label>
           <input
             required
             type="text"
+            placeholder="Name of your product"
             value={formData.title}
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
 
         <div>
-          <label className="block text-sm mb-1">Description</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">
+            Description
+          </label>
           <textarea
             required
-            rows={3}
+            rows={4}
+            placeholder="Describe the condition, features, or any details..."
             value={formData.summary}
             onChange={(e) =>
               setFormData({ ...formData, summary: e.target.value })
             }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring resize-none"
           />
         </div>
 
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="block text-sm mb-1">Price</label>
+            <label className="block text-sm font-medium mb-1 text-foreground">
+              Price
+            </label>
             <input
               required
               type="number"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
             />
           </div>
           <div className="w-1/3">
-            <label className="block text-sm mb-1">Currency</label>
+            <label className="block text-sm font-medium mb-1 text-foreground">
+              Currency
+            </label>
             <select
               value={formData.currency}
               onChange={(e) =>
                 setFormData({ ...formData, currency: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring cursor-pointer"
             >
-              <option value="BRL">BRL</option>
-              <option value="USD">USD</option>
-              <option value="BTC">BTC</option>
+              <option value="BRL">BRL (R$)</option>
+              <option value="USD">USD ($)</option>
+              <option value="BTC">BTC (₿)</option>
+              <option value="SATS">SATS</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm mb-1">
-            City / Region (for geohash search)
+          <label className="block text-sm font-medium mb-1 text-foreground">
+            Item Location
           </label>
           <input
             required
             type="text"
-            placeholder="Ex: São Paulo"
+            placeholder="City, Neighborhood, or State (e.g. São Paulo, SP)"
             value={formData.locationName}
             onChange={(e) =>
               setFormData({ ...formData, locationName: e.target.value })
             }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
           />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Used to generate a geohash for local search.
+          </p>
         </div>
 
         <div>
-          <label className="block text-sm mb-1">Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={isUploadingImage}
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring"
-          />
-          {isUploadingImage && (
-            <p className="text-sm mt-2 text-primary">Uploading image...</p>
-          )}
-          {formData.imageUrl && !isUploadingImage && (
-            <img
-              src={formData.imageUrl}
-              alt="Preview"
-              className="mt-4 h-32 object-cover rounded border border-border"
-            />
-          )}
+          <label className="block text-sm font-medium mb-1.5 text-foreground">
+            Product Image
+          </label>
+
+          <div className="flex items-center justify-center w-full">
+            <label
+              htmlFor="image-upload"
+              className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/20 border-input hover:bg-muted/40 hover:border-primary/50 transition-colors overflow-hidden relative
+                ${isUploadingImage ? "opacity-60 cursor-not-allowed" : ""}
+                ${formData.imageUrl ? "border-primary/50" : ""}
+              `}
+            >
+              {isUploadingImage ? (
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                  <p className="text-sm text-muted-foreground">
+                    Uploading to nostr.build...
+                  </p>
+                </div>
+              ) : formData.imageUrl ? (
+                <div className="relative group w-full h-full flex items-center justify-center p-2">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="h-full object-contain rounded-md"
+                  />
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                    <p className="text-sm text-white font-medium flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                      </svg>
+                      Click to change image
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                  <svg
+                    className="w-10 h-10 mb-3 text-muted-foreground"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 20 16"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                    />
+                  </svg>
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    <span className="font-semibold text-primary">
+                      Click to upload
+                    </span>{" "}
+                    product photo
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG or WEBP (Max. 5MB)
+                  </p>
+                </div>
+              )}
+
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={handleImageUpload}
+                disabled={isUploadingImage}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={isLoading || isUploadingImage}
-          className="mt-4 rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"
         >
-          {isLoading ? "Publishing..." : "Publish product"}
+          {isLoading ? "Publishing to Nostr..." : "Publish Product Listing"}
         </button>
       </form>
     </div>
