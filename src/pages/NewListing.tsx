@@ -16,15 +16,16 @@ export function NewListing() {
     price: "",
     currency: "USD",
     locationName: "",
-    imageUrl: "",
+    imageUrls: [] as string[],
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image too large. Max size is 5MB.");
+    const oversized = files.filter((f) => f.size > 5 * 1024 * 1024);
+    if (oversized.length > 0) {
+      alert("Some images are too large. Max size is 5MB per image.");
       return;
     }
 
@@ -32,7 +33,7 @@ export function NewListing() {
     try {
       const uploadUrl = "https://nostr.build/api/v2/upload/files";
 
-      const authEvent = new NDKEvent(ndk);
+      const authEvent = new NDKEvent(ndk!);
       authEvent.kind = 27235;
       authEvent.content = "";
       authEvent.tags = [
@@ -42,44 +43,51 @@ export function NewListing() {
       await authEvent.sign();
 
       const authHeader = `Nostr ${btoa(JSON.stringify(authEvent.rawEvent()))}`;
+      const newUrls: string[] = [];
 
-      const uploadData = new FormData();
-      uploadData.append("file", file);
+      for (const file of files) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
 
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          Authorization: authHeader,
-        },
-        body: uploadData,
-      });
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { Authorization: authHeader },
+          body: uploadData,
+        });
 
-      if (!response.ok)
-        throw new Error(`Media server error: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`Media server error: ${response.status}`);
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (result.status === "success" && result.nip94_event?.tags) {
-        const urlTag = result.nip94_event.tags.find(
-          (t: string[]) => t[0] === "url",
-        );
-        if (urlTag && urlTag[1]) {
-          setFormData((prev) => ({ ...prev, imageUrl: urlTag[1] }));
-        } else {
-          throw new Error("URL not found in NIP-96 response");
+        if (result.status === "success" && result.nip94_event?.tags) {
+          const urlTag = result.nip94_event.tags.find(
+            (t: string[]) => t[0] === "url",
+          );
+          if (urlTag && urlTag[1]) newUrls.push(urlTag[1]);
+        } else if (result.data && result.data[0] && result.data[0].url) {
+          newUrls.push(result.data[0].url);
         }
-      } else if (result.data && result.data[0] && result.data[0].url) {
-        setFormData((prev) => ({ ...prev, imageUrl: result.data[0].url }));
-      } else {
-        throw new Error("Unexpected response format from the API");
       }
+
+      setFormData((prev) => ({
+        ...prev,
+        imageUrls: [...prev.imageUrls, ...newUrls],
+      }));
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Please try again.");
+      alert("Failed to upload one or more images. Please try again.");
     } finally {
       setIsUploadingImage(false);
       e.target.value = "";
     }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, index) => index !== indexToRemove),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,17 +134,13 @@ export function NewListing() {
         ["g", regionHash],
       ];
 
-      if (formData.imageUrl) {
-        tags.push(["image", formData.imageUrl]);
-      }
+      formData.imageUrls.forEach((url) => {
+        tags.push(["image", url]);
+      });
 
       event.tags = tags;
 
-      const publishedRelays = await event.publish();
-      console.log(
-        "Published in the following relays:",
-        Array.from(publishedRelays).map((r) => r.url),
-      );
+      await event.publish();
       alert("Product posted succesfully!");
 
       setFormData({
@@ -145,11 +149,11 @@ export function NewListing() {
         price: "",
         currency: "USD",
         locationName: "",
-        imageUrl: "",
+        imageUrls: [],
       });
     } catch (error) {
       console.error("Failed to post: ", error);
-      alert("Error posting the product");
+      alert("Error posting the product. Check your connection");
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +200,8 @@ export function NewListing() {
             onChange={(e) =>
               setFormData({ ...formData, summary: e.target.value })
             }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring resize-none"
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 
+            focus:ring-ring focus:border-ring resize-none"
           />
         </div>
 
@@ -215,7 +220,8 @@ export function NewListing() {
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 
+              focus:ring-ring focus:border-ring"
             />
           </div>
           <div className="w-1/3">
@@ -227,7 +233,8 @@ export function NewListing() {
               onChange={(e) =>
                 setFormData({ ...formData, currency: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring cursor-pointer"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 
+              focus:ring-ring focus:border-ring cursor-pointer"
             >
               <option value="BRL">BRL (R$)</option>
               <option value="USD">USD ($)</option>
@@ -258,82 +265,84 @@ export function NewListing() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5 text-foreground">
-            Product Image
+            Product Images
           </label>
+
+          {formData.imageUrls.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {formData.imageUrls.map((url, index) => (
+                <div
+                  key={index}
+                  className="relative group w-full h-24 border border-border rounded-md overflow-hidden bg-muted/20"
+                >
+                  <img
+                    src={url}
+                    alt={`Upload ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100
+                    flex items-center justify-center transition-opacity text-sm font-semibold cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center justify-center w-full">
             <label
               htmlFor="image-upload"
-              className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/20 border-input hover:bg-muted/40 hover:border-primary/50 transition-colors overflow-hidden relative
+              className={`flex flex-col items-center justify-center w-full h-50 border-2 
+                border-dashed rounded-lg cursor-pointer bg-muted/20 border-input hover:bg-muted/40 transition-colors
                 ${isUploadingImage ? "opacity-60 cursor-not-allowed" : ""}
-                ${formData.imageUrl ? "border-primary/50" : ""}
               `}
             >
-              {isUploadingImage ? (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
-                  <p className="text-sm text-muted-foreground">
-                    Uploading to nostr.build...
-                  </p>
-                </div>
-              ) : formData.imageUrl ? (
-                <div className="relative group w-full h-full flex items-center justify-center p-2">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Preview"
-                    className="h-full object-contain rounded-md"
-                  />
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                    <p className="text-sm text-white font-medium flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
+              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                {isUploadingImage ? (
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mb-2"></div>
+                    <p className="text-sm text-muted-foreground">
+                      Uploading...
+                    </p>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                    <svg
+                      className="w-10 h-10 mb-3 text-muted-foreground"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 20 16"
+                    >
+                      <path
                         stroke="currentColor"
-                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                      >
-                        <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-                      </svg>
-                      Click to change image
+                        strokeWidth="1.5"
+                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 
+                        5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                      />
+                    </svg>
+                    <p className="mb-2 text-sm text-muted-foreground">
+                      <span className="font-semibold text-primary">
+                        Click to upload
+                      </span>{" "}
+                      product photo
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG or WEBP (Max. 5MB)
                     </p>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                  <svg
-                    className="w-10 h-10 mb-3 text-muted-foreground"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    <span className="font-semibold text-primary">
-                      Click to upload
-                    </span>{" "}
-                    product photo
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG or WEBP (Max. 5MB)
-                  </p>
-                </div>
-              )}
-
+                )}
+              </div>
               <input
                 id="image-upload"
                 type="file"
+                multiple
                 accept="image/png, image/jpeg, image/webp"
                 onChange={handleImageUpload}
                 disabled={isUploadingImage}
@@ -346,7 +355,8 @@ export function NewListing() {
         <button
           type="submit"
           disabled={isLoading || isUploadingImage}
-          className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"
+          className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground 
+          hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"
         >
           {isLoading ? "Publishing to Nostr..." : "Publish Product Listing"}
         </button>
