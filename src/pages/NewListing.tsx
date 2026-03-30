@@ -5,18 +5,40 @@ import * as geohash from "ngeohash";
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
 
+interface ListingFormData {
+  title: string;
+  summary: string;
+  price: string;
+  currency: string;
+  locationName: string;
+  imageUrls: string[];
+}
+
+interface NominatimResponse {
+  lat: string;
+  lon: string;
+}
+
+interface NostrBuildResponse {
+  status?: string;
+  data?: Array<{ url: string }>;
+  nip94_event?: {
+    tags: Array<string[]>;
+  };
+}
+
 export function NewListing() {
   const { ndk } = useNDK();
   const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ListingFormData>({
     title: "",
     summary: "",
     price: "",
     currency: "USD",
     locationName: "",
-    imageUrls: [] as string[],
+    imageUrls: [],
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +80,7 @@ export function NewListing() {
         if (!response.ok)
           throw new Error(`Media server error: ${response.status}`);
 
-        const result = await response.json();
+        const result = (await response.json()) as NostrBuildResponse;
 
         if (result.status === "success" && result.nip94_event?.tags) {
           const urlTag = result.nip94_event.tags.find(
@@ -106,7 +128,7 @@ export function NewListing() {
       );
 
       if (!geoResponse.ok) throw new Error("Error in nominatim API");
-      const geoData = await geoResponse.json();
+      const geoData = (await geoResponse.json()) as NominatimResponse[];
 
       if (!geoData || geoData.length === 0) {
         alert("Local not found. Type a valid region");
