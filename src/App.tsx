@@ -23,7 +23,7 @@ export default function App() {
           <NavLink to="/" className="text-2xl font-bold">
             Nostr Marketplace
           </NavLink>
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-8">
             <ul>
               <li>
                 <NavLink

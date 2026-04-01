@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import * as geohash from "ngeohash";
+import { useNavigate } from "react-router-dom";
 
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
@@ -30,6 +31,7 @@ interface NostrBuildResponse {
 export function NewListing() {
   const { ndk } = useNDK();
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formData, setFormData] = useState<ListingFormData>({
@@ -165,14 +167,7 @@ export function NewListing() {
       await event.publish();
       alert("Product posted succesfully!");
 
-      setFormData({
-        title: "",
-        summary: "",
-        price: "",
-        currency: "USD",
-        locationName: "",
-        imageUrls: [],
-      });
+      navigate("/");
     } catch (error) {
       console.error("Failed to post: ", error);
       alert("Error posting the product. Check your connection");

@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { type NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { NavLink } from "react-router-dom";
+
 import { useAuth } from "../providers/AuthProvider";
 
 export function LoginButton() {
@@ -11,6 +14,15 @@ export function LoginButton() {
   } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nsecInput, setNsecInput] = useState("");
+  const [profile, setProfile] = useState<NDKUserProfile | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      currentUser.fetchProfile().then((p) => {
+        if (p) setProfile(p);
+      });
+    }
+  }, [currentUser]);
 
   const handleExtensionLogin = async () => {
     await loginWithExtension();
@@ -25,17 +37,33 @@ export function LoginButton() {
   };
 
   if (currentUser) {
+    const avatar = profile?.image || profile?.picture;
+    const name = profile?.name || profile?.displayName || "Profile";
+
     return (
       <div className="flex items-center gap-4">
-        <span className="font-medium">
-          {currentUser.profile?.name ||
-            currentUser.profile?.displayName ||
-            `${currentUser.npub.slice(0, 10)}
-          ...${currentUser.npub.slice(-4)}`}
-        </span>
+        <NavLink
+          to="/profile"
+          className="flex items-center gap-2 hover:bg-muted p-1.5 pr-4 rounded-full transition-colors
+          border border-transparent hover:border-border"
+        >
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+              {name.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+          <span className="text-sm font-semibold text-foreground">{name}</span>
+        </NavLink>
+
         <button
           onClick={logout}
-          className="rounded bg-destructive px-4 py-2 text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+          className="rounded bg-destructive px-4 py-2 font-medium text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
         >
           Log out
         </button>
