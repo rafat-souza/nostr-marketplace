@@ -378,7 +378,7 @@ export function NewListing() {
           type="submit"
           disabled={isLoading || isUploadingImage}
           className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground 
-          hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"
+          hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
         >
           {isLoading ? "Publishing to Nostr..." : "Publish Product Listing"}
         </button>

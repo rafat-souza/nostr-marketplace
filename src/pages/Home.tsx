@@ -3,6 +3,7 @@ import geohash from "ngeohash";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 
 import { useNDK } from "../providers/NDKProvider";
+import { ListingCard } from "../components/ListingCard";
 
 export default function Home() {
   const { ndk } = useNDK();
@@ -41,7 +42,12 @@ export default function Home() {
         "#g": [regionHash],
       };
 
-      const events = await ndk.fetchEvents(filter);
+      const fetchPromise = ndk.fetchEvents(filter);
+      const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) =>
+        setTimeout(() => resolve(new Set()), 4000),
+      );
+
+      const events = await Promise.race([fetchPromise, timeoutPromise]);
       setListings(Array.from(events));
     } catch (error) {
       console.error("Failed on searching for ads: ", error);
@@ -79,40 +85,17 @@ export default function Home() {
 
       {hasSearched && (
         <section>
-          <h3 className="text-lg font-semibold mb-4">
-            Advertisements in the region
-          </h3>
+          <h3 className="text-lg font-semibold mb-4">Products in the region</h3>
           {listings.length === 0 && !isLoading && (
             <p className="text-muted-foreground">
               No products found in this area.
             </p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {listings.map((event) => {
-              const title =
-                event.tags.find((t) => t[0] === "title")?.[1] || "Untitled";
-              const price =
-                event.tags.find((t) => t[0] === "price")?.[1] ||
-                "Price upon request";
-              const currency =
-                event.tags.find((t) => t[0] === "price")?.[2] || "";
-
-              return (
-                <div
-                  key={event.id}
-                  className="p-4 rounded-lg border border-border bg-card"
-                >
-                  <h4 className="font-bold truncate">{title}</h4>
-                  <p className="text-lg mt-2 text-primary">
-                    {price} {currency}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2 truncate">
-                    ID: {event.id}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {listings.map((event) => (
+              <ListingCard key={event.id} event={event} />
+            ))}
           </div>
         </section>
       )}
