@@ -1,8 +1,7 @@
 import { Outlet } from "react-router-dom";
-import { useState } from "react";
 import { LoginButton } from "./components/LoginButton";
 import { useNDK } from "./providers/NDKProvider";
-import { useAuth } from "./providers/AuthProvider";
+import { NavLink } from "react-router-dom";
 
 import "./App.css";
 
@@ -21,8 +20,23 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-card p-4 shadow-sm">
         <div className="container flex justify-between mx-auto">
-          <h1 className="text-2xl font-bold">Nostr Marketplace</h1>
-          <LoginButton />
+          <NavLink to="/" className="text-2xl font-bold">
+            Nostr Marketplace
+          </NavLink>
+          <div className="flex items-center gap-10">
+            <ul>
+              <li>
+                <NavLink
+                  to="/new"
+                  className="bg-yellow-400 text-black px-4 py-2 rounded-full 
+                  font-semibold shadow-sm"
+                >
+                  Sell Product
+                </NavLink>
+              </li>
+            </ul>
+            <LoginButton />
+          </div>
         </div>
       </header>
       <main className="container mx-auto p-4">

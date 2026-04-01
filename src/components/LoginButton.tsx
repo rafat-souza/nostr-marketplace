@@ -27,7 +27,7 @@ export function LoginButton() {
   if (currentUser) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium">
+        <span className="font-medium">
           {currentUser.profile?.name ||
             currentUser.profile?.displayName ||
             `${currentUser.npub.slice(0, 10)}
@@ -35,7 +35,7 @@ export function LoginButton() {
         </span>
         <button
           onClick={logout}
-          className="rounded bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+          className="rounded bg-destructive px-4 py-2 text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
         >
           Log out
         </button>
@@ -47,7 +47,7 @@ export function LoginButton() {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 cursor-pointer"
+        className="rounded bg-primary font-semibold px-4 py-2 text-primary-foreground hover:bg-primary/90 cursor-pointer"
       >
         Log in
       </button>
