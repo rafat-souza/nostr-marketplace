@@ -7,6 +7,7 @@ import { NewListing } from "./pages/NewListing.tsx";
 import { AuthProvider } from "./providers/AuthProvider.tsx";
 import { NDKProvider } from "./providers/NDKProvider.tsx";
 import App from "./App.tsx";
+import { Profile } from "./pages/Profile.tsx";
 
 import "./index.css";
 
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
       {
         path: "/new",
         element: <NewListing />,
+      },
+      {
+        path: "/profile",
+        element: <Profile />,
       },
     ],
   },
