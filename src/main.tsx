@@ -10,6 +10,7 @@ import App from "./App.tsx";
 import { Profile } from "./pages/Profile.tsx";
 
 import "./index.css";
+import { ListingDetail } from "./pages/ListingDetail.tsx";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <Profile />,
+      },
+      {
+        path: "/listing/:id",
+        element: <ListingDetail />,
       },
     ],
   },

@@ -105,7 +105,9 @@ export function Profile() {
 
         <div className="flex-1 text-center md:text-left">
           <h2 className="text-2xl font-bold text-foreground">{name}</h2>
-          <p className="text-muted-foreground mt-2 max-w-xl">{bio}</p>
+          <p className="text-muted-foreground mt-2 max-w-xl whitespace-pre-wrap">
+            {bio}
+          </p>
 
           <div className="flex items-center justify-center md:justify-start gap-6 mt-4 pt-4 border-t border-border">
             <div className="flex flex-col">
@@ -145,7 +147,11 @@ export function Profile() {
                 <ListingCard event={event} />
 
                 <button
-                  onClick={() => setListingToDelete(event)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setListingToDelete(event);
+                  }}
                   className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm cursor-pointer"
                   title="Delete Listing"
                 >

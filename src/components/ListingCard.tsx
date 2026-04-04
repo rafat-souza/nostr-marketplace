@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { NDKEvent, type NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { Link } from "react-router-dom";
 
 interface ListingCardProps {
   event: NDKEvent;
@@ -29,7 +30,10 @@ export function ListingCard({ event }: ListingCardProps) {
   const sellerPicture = profile?.image || profile?.picture;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
+    <Link
+      to={`/listing/${event.id}`}
+      className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow"
+    >
       <div className="w-full aspect-square bg-muted/10 border-b border-border overflow-hidden relative">
         {imageUrl ? (
           <img
@@ -115,6 +119,6 @@ export function ListingCard({ event }: ListingCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
