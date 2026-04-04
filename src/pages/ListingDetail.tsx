@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { NDKEvent, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
@@ -168,7 +169,10 @@ export function ListingDetail() {
 
         {/* Seller card and contact */}
         <div className="bg-card p-4 rounded-xl border border-border flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
+          <Link
+            to={`/seller/${event.pubkey}`}
+            className="flex items-center gap-3"
+          >
             {sellerPicture ? (
               <img
                 src={sellerPicture}
@@ -188,7 +192,7 @@ export function ListingDetail() {
               </span>
               <span className="font-bold text-foreground">{sellerName}</span>
             </div>
-          </div>
+          </Link>
 
           <button
             onClick={handleContactSeller}

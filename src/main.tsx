@@ -6,11 +6,12 @@ import Home from "./pages/Home.tsx";
 import { NewListing } from "./pages/NewListing.tsx";
 import { AuthProvider } from "./providers/AuthProvider.tsx";
 import { NDKProvider } from "./providers/NDKProvider.tsx";
-import App from "./App.tsx";
 import { Profile } from "./pages/Profile.tsx";
+import { ListingDetail } from "./pages/ListingDetail.tsx";
+import { SellerProfile } from "./pages/SellerProfile.tsx";
+import App from "./App.tsx";
 
 import "./index.css";
-import { ListingDetail } from "./pages/ListingDetail.tsx";
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       {
         path: "/listing/:id",
         element: <ListingDetail />,
+      },
+      {
+        path: "/seller/:pubkey",
+        element: <SellerProfile />,
       },
     ],
   },
