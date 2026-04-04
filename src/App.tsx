@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { LoginButton } from "./components/LoginButton";
 import { useNDK } from "./providers/NDKProvider";
 import { NavLink } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import "./App.css";
 
@@ -42,6 +43,7 @@ export default function App() {
       <main className="container mx-auto p-4">
         <Outlet />
       </main>
+      <Toaster position="bottom-right" />
     </div>
   );
 }

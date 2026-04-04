@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import * as geohash from "ngeohash";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
@@ -49,7 +50,7 @@ export function NewListing() {
 
     const oversized = files.filter((f) => f.size > 5 * 1024 * 1024);
     if (oversized.length > 0) {
-      alert("Some images are too large. Max size is 5MB per image.");
+      toast.error("Some images are too large. Max size is 5MB per image.");
       return;
     }
 
@@ -117,7 +118,7 @@ export function NewListing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ndk || !currentUser) {
-      alert("You have to log in to publish");
+      toast.error("You have to log in to publish");
       return;
     }
 
@@ -133,7 +134,7 @@ export function NewListing() {
       const geoData = (await geoResponse.json()) as NominatimResponse[];
 
       if (!geoData || geoData.length === 0) {
-        alert("Local not found. Type a valid region");
+        toast.error("Local not found. Type a valid region");
         setIsLoading(false);
         return;
       }
@@ -165,12 +166,12 @@ export function NewListing() {
       event.tags = tags;
 
       await event.publish();
-      alert("Product posted succesfully!");
+      toast.success("Product posted succesfully!");
 
       navigate("/");
     } catch (error) {
       console.error("Failed to post: ", error);
-      alert("Error posting the product. Check your connection");
+      toast.error("Error posting the product. Check your connection");
     } finally {
       setIsLoading(false);
     }

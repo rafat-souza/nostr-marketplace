@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { NavLink } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import { useAuth } from "../providers/AuthProvider";
 
@@ -27,12 +28,14 @@ export function LoginButton() {
   const handleExtensionLogin = async () => {
     await loginWithExtension();
     setIsModalOpen(false);
+    toast.success("Connected");
   };
 
   const handleNsecLogin = async () => {
     if (!nsecInput) return;
     await loginWithNsec(nsecInput);
     setIsModalOpen(false);
+    toast.success("Connected");
     setNsecInput("");
   };
 

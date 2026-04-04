@@ -3,6 +3,7 @@ import { NDKEvent, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
 import { ListingCard } from "../components/ListingCard";
+import toast from "react-hot-toast";
 
 export function Profile() {
   const { ndk } = useNDK();
@@ -67,9 +68,10 @@ export function Profile() {
 
       setListings((prev) => prev.filter((e) => e.id !== listingToDelete.id));
       setListingToDelete(null);
+      toast.success("Listing deleted successfully");
     } catch (error) {
       console.error("Error deleting listing:", error);
-      alert("Failed to delete listing.");
+      toast.error("Failed to delete listing.");
     }
   };
 

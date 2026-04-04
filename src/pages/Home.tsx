@@ -1,6 +1,7 @@
 import { useState } from "react";
 import geohash from "ngeohash";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
+import toast from "react-hot-toast";
 
 import { useNDK } from "../providers/NDKProvider";
 import { ListingCard } from "../components/ListingCard";
@@ -28,7 +29,7 @@ export default function Home() {
       const geoData = await geoResponse.json();
 
       if (!geoData || geoData.length === 0) {
-        alert("Region not found");
+        toast.error("Region not found");
         setIsLoading(false);
         return;
       }
