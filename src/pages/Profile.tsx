@@ -11,8 +11,8 @@ export function Profile() {
 
   const [profile, setProfile] = useState<NDKUserProfile | null>(null);
   const [listings, setListings] = useState<NDKEvent[]>([]);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState<number | null>(null);
+  const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [listingToDelete, setListingToDelete] = useState<NDKEvent | null>(null);
@@ -22,31 +22,44 @@ export function Profile() {
 
     const fetchProfileData = async () => {
       try {
-        const userProfile = await currentUser.fetchProfile();
+        const userProfile = await currentUser.fetchProfile().catch(() => null);
         if (userProfile) setProfile(userProfile);
 
-        const userListings = await ndk.fetchEvents({
-          kinds: [30402],
-          authors: [currentUser.pubkey],
-        });
+        const userListings = await ndk
+          .fetchEvents({
+            kinds: [30402],
+            authors: [currentUser.pubkey],
+          })
+          .catch(() => new Set<NDKEvent>());
         setListings(Array.from(userListings));
 
-        const followingEvent = await ndk.fetchEvents({
-          kinds: [3],
-          authors: [currentUser.pubkey],
-        });
-        const followsArray = Array.from(followingEvent)[0];
-        if (followsArray) {
-          setFollowingCount(
-            followsArray.tags.filter((t) => t[0] === "p").length,
-          );
+        const followingEvent = await ndk
+          .fetchEvents({
+            kinds: [3],
+            authors: [currentUser.pubkey],
+          })
+          .catch(() => null);
+
+        if (followingEvent) {
+          const followsArray = Array.from(followingEvent)[0];
+          if (followsArray) {
+            setFollowingCount(
+              followsArray.tags.filter((t) => t[0] === "p").length,
+            );
+          } else {
+            setFollowingCount(0);
+          }
         }
 
-        const followersEvents = await ndk.fetchEvents({
-          kinds: [3],
-          "#p": [currentUser.pubkey],
-        });
-        setFollowersCount(followersEvents.size);
+        const followersEvents = await ndk
+          .fetchEvents({
+            kinds: [3],
+            "#p": [currentUser.pubkey],
+          })
+          .catch(() => null);
+        if (followersEvents) {
+          setFollowersCount(followersEvents.size);
+        }
       } catch (error) {
         console.error("Error fetching profile data:", error);
       } finally {
@@ -112,7 +125,7 @@ export function Profile() {
           <div className="flex items-center justify-center md:justify-start gap-6 mt-4 pt-4 border-t border-border">
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground">
-                {followingCount}
+                {followingCount !== null ? followingCount : "-"}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
                 Following
@@ -120,7 +133,7 @@ export function Profile() {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground">
-                {followersCount}
+                {followersCount !== null ? followingCount : "-"}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
                 Followers
