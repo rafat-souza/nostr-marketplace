@@ -133,7 +133,7 @@ export function Profile() {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground">
-                {followersCount !== null ? followingCount : "-"}
+                {followersCount !== null ? followersCount : "-"}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
                 Followers
