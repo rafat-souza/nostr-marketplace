@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import geohash from "ngeohash";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import toast from "react-hot-toast";
@@ -9,13 +9,43 @@ import { ListingCard } from "../components/ListingCard";
 export default function Home() {
   const { ndk } = useNDK();
   const [region, setRegion] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRecent, setIsLoadingRecent] = useState(true);
+  const [recentListings, setRecentListings] = useState<NDKEvent[]>([]);
+  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [listings, setListings] = useState<NDKEvent[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
+  useEffect(() => {
+    if (!ndk) return;
+
+    const fetchRecentListings = async () => {
+      setIsLoadingRecent(true);
+      try {
+        const filter = {
+          kinds: [30402],
+          limit: 20,
+        };
+
+        const fetchPromise = ndk.fetchEvents(filter);
+        const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) =>
+          setTimeout(() => resolve(new Set()), 4000),
+        );
+
+        const events = await Promise.race([fetchPromise, timeoutPromise]);
+        setRecentListings(Array.from(events));
+      } catch (error) {
+        console.error("Failed on fetching recent listings: ", error);
+      } finally {
+        setIsLoadingRecent(false);
+      }
+    };
+
+    fetchRecentListings();
+  }, [ndk]);
+
   const searchRegion = async () => {
     if (!region || !ndk) return;
-    setIsLoading(true);
+    setIsLoadingSearch(true);
     setListings([]);
     setHasSearched(true);
 
@@ -30,7 +60,7 @@ export default function Home() {
 
       if (!geoData || geoData.length === 0) {
         toast.error("Region not found");
-        setIsLoading(false);
+        setIsLoadingSearch(false);
         return;
       }
 
@@ -51,9 +81,9 @@ export default function Home() {
       const events = await Promise.race([fetchPromise, timeoutPromise]);
       setListings(Array.from(events));
     } catch (error) {
-      console.error("Failed on searching for ads: ", error);
+      console.error("Failed on searching for listings: ", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSearch(false);
     }
   };
 
@@ -75,11 +105,11 @@ export default function Home() {
           />
           <button
             onClick={searchRegion}
-            disabled={isLoading || !region}
+            disabled={isLoadingSearch || !region}
             className="rounded bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90
             disabled:opacity-50 cursor-pointer"
           >
-            {isLoading ? "Searching..." : "Search"}
+            {isLoadingSearch ? "Searching..." : "Search"}
           </button>
         </div>
       </section>
@@ -87,7 +117,7 @@ export default function Home() {
       {hasSearched && (
         <section>
           <h3 className="text-lg font-semibold mb-4">Products in the region</h3>
-          {listings.length === 0 && !isLoading && (
+          {listings.length === 0 && !isLoadingSearch && (
             <p className="text-muted-foreground">
               No products found in this area.
             </p>
