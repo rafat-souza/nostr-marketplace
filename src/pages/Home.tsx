@@ -32,7 +32,11 @@ export default function Home() {
         );
 
         const events = await Promise.race([fetchPromise, timeoutPromise]);
-        setRecentListings(Array.from(events));
+        const sortedAndLimitedEvents = Array.from(events)
+          .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+          .slice(0, 20);
+
+        setRecentListings(sortedAndLimitedEvents);
       } catch (error) {
         console.error("Failed on fetching recent listings: ", error);
       } finally {
@@ -114,7 +118,7 @@ export default function Home() {
         </div>
       </section>
 
-      {hasSearched && (
+      {hasSearched ? (
         <section>
           <h3 className="text-lg font-semibold mb-4">Products in the region</h3>
           {listings.length === 0 && !isLoadingSearch && (
@@ -128,6 +132,23 @@ export default function Home() {
               <ListingCard key={event.id} event={event} />
             ))}
           </div>
+        </section>
+      ) : (
+        <section>
+          <h3 className="text-lg font-semibold mb-4">Recent Products</h3>
+          {isLoadingRecent ? (
+            <p className="text-muted-foreground animate-pulse">
+              Loading latest products...
+            </p>
+          ) : recentListings.length === 0 ? (
+            <p className="text-muted-foreground">No recent products found.</p>
+          ) : (
+            <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentListings.map((event) => (
+                <ListingCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>
