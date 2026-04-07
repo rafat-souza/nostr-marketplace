@@ -80,17 +80,29 @@ export default function Home() {
         filter["#g"] = [regionHash];
       }
 
-      console.log("Geohash:", regionHash);
-
       const fetchPromise = ndk.fetchEvents(filter);
       const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) =>
         setTimeout(() => resolve(new Set()), 4000),
       );
 
       const events = await Promise.race([fetchPromise, timeoutPromise]);
-      setListings(Array.from(events));
+      let fetchedListings = Array.from(events);
+
+      if (productSearch) {
+        const searchLower = productSearch.toLowerCase();
+        fetchedListings = fetchedListings.filter((event) => {
+          const title =
+            event.tags.find((t) => t[0] === "title")?.[1]?.toLowerCase() || "";
+          const content = event.content.toLowerCase();
+          return title.includes(searchLower) || content.includes(searchLower);
+        });
+      }
+      fetchedListings.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+      setListings(fetchedListings);
     } catch (error) {
       console.error("Failed on searching for listings: ", error);
+      toast.error("Error performing search");
     } finally {
       setIsLoadingSearch(false);
     }
@@ -100,23 +112,32 @@ export default function Home() {
     <div className="flex flex-col gap-6">
       <section className="bg-card p-6 rounded-lg shadow-sm border border-border">
         <h2 className="text-xl font-bold mb-4">
-          Where do you want to find products?
+          What and where are you looking for?
         </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row gap-3">
+          <input
+            type="text"
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            placeholder="Search for a product (e.g. smartphone, bicycle...)"
+            className="flex-[2] p-2 rounded bg-background border border-input text-foreground
+           focus:outline-none focus:ring-2 focus:ring-ring"
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
           <input
             type="text"
             value={region}
             onChange={(e) => setRegion(e.target.value)}
-            placeholder="Type the city or the neighborhood..."
-            className="flex-grow p-2 rounded bg-background border border-input text-foreground
+            placeholder="City or neighborhood..."
+            className="flex-[1] p-2 rounded bg-background border border-input text-foreground
             focus:outline-none focus:ring-2 focus:ring-ring"
-            onKeyDown={(e) => e.key === "Enter" && searchRegion()}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button
-            onClick={searchRegion}
-            disabled={isLoadingSearch || !region}
+            onClick={handleSearch}
+            disabled={isLoadingSearch || (!region && !productSearch)}
             className="rounded bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90
-            disabled:opacity-50 cursor-pointer"
+            disabled:opacity-50 cursor-pointer whitespace-nowrap"
           >
             {isLoadingSearch ? "Searching..." : "Search"}
           </button>
@@ -125,10 +146,10 @@ export default function Home() {
 
       {hasSearched ? (
         <section>
-          <h3 className="text-lg font-semibold mb-4">Products in the region</h3>
+          <h3 className="text-lg font-semibold mb-4">Search results</h3>
           {listings.length === 0 && !isLoadingSearch && (
             <p className="text-muted-foreground">
-              No products found in this area.
+              No products found matching your search.
             </p>
           )}
 
