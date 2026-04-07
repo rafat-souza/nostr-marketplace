@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import geohash from "ngeohash";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, type NDKFilter } from "@nostr-dev-kit/ndk";
 import toast from "react-hot-toast";
 
 import { useNDK } from "../providers/NDKProvider";
@@ -8,6 +8,7 @@ import { ListingCard } from "../components/ListingCard";
 
 export default function Home() {
   const { ndk } = useNDK();
+  const [productSearch, setProductSearch] = useState("");
   const [region, setRegion] = useState("");
   const [isLoadingRecent, setIsLoadingRecent] = useState(true);
   const [recentListings, setRecentListings] = useState<NDKEvent[]>([]);
@@ -47,35 +48,39 @@ export default function Home() {
     fetchRecentListings();
   }, [ndk]);
 
-  const searchRegion = async () => {
-    if (!region || !ndk) return;
+  const handleSearch = async () => {
+    if ((!region && !productSearch) || !ndk) return;
     setIsLoadingSearch(true);
     setListings([]);
     setHasSearched(true);
 
     try {
-      const geoResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(region)}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}`,
-        {
-          headers: { Accept: "application/json" },
-        },
-      );
-      const geoData = await geoResponse.json();
+      const filter: NDKFilter = {
+        kinds: [30402],
+        limit: 100,
+      };
 
-      if (!geoData || geoData.length === 0) {
-        toast.error("Region not found");
-        setIsLoadingSearch(false);
-        return;
+      if (region) {
+        const geoResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(region)}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}`,
+          {
+            headers: { Accept: "application/json" },
+          },
+        );
+        const geoData = await geoResponse.json();
+
+        if (!geoData || geoData.length === 0) {
+          toast.error("Region not found");
+          setIsLoadingSearch(false);
+          return;
+        }
+
+        const { lat, lon } = geoData[0];
+        const regionHash = geohash.encode(parseFloat(lat), parseFloat(lon), 4); // 39km x 19km
+        filter["#g"] = [regionHash];
       }
 
-      const { lat, lon } = geoData[0];
-
-      const regionHash = geohash.encode(parseFloat(lat), parseFloat(lon), 4); // 39km x 19km
       console.log("Geohash:", regionHash);
-      const filter = {
-        kinds: [30402],
-        "#g": [regionHash],
-      };
 
       const fetchPromise = ndk.fetchEvents(filter);
       const timeoutPromise = new Promise<Set<NDKEvent>>((resolve) =>
