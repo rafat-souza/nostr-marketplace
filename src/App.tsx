@@ -21,7 +21,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-card p-4 shadow-sm">
         <div className="container flex justify-between mx-auto">
-          <NavLink to="/" className="text-2xl font-bold">
+          <NavLink to="/" className="text-2xl font-bold" reloadDocument>
             Nostr Marketplace
           </NavLink>
           <div className="flex items-center gap-8">

@@ -57,7 +57,7 @@ export default function Home() {
     try {
       const filter: NDKFilter = {
         kinds: [30402],
-        limit: 100,
+        limit: 300,
       };
 
       if (region) {
@@ -89,15 +89,46 @@ export default function Home() {
       let fetchedListings = Array.from(events);
 
       if (productSearch) {
-        const searchLower = productSearch.toLowerCase();
+        const normalizeStr = (str: string) =>
+          str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+
+        const searchNormalized = normalizeStr(productSearch);
+
         fetchedListings = fetchedListings.filter((event) => {
-          const title =
-            event.tags.find((t) => t[0] === "title")?.[1]?.toLowerCase() || "";
-          const content = event.content.toLowerCase();
-          return title.includes(searchLower) || content.includes(searchLower);
+          const title = event.tags.find((t) => t[0] === "title")?.[1] || "";
+          const content = event.content || "";
+
+          return (
+            normalizeStr(title).includes(searchNormalized) ||
+            normalizeStr(content).includes(searchNormalized)
+          );
         });
+
+        fetchedListings.sort((a, b) => {
+          const titleA = normalizeStr(
+            a.tags.find((t) => t[0] === "title")?.[1] || "",
+          );
+          const titleB = normalizeStr(
+            b.tags.find((t) => t[0] === "title")?.[1] || "",
+          );
+
+          const aHasTitleMatch = titleA.includes(searchNormalized);
+          const bHasTitleMatch = titleB.includes(searchNormalized);
+
+          if (aHasTitleMatch && !bHasTitleMatch) return -1;
+          if (!aHasTitleMatch && bHasTitleMatch) return 1;
+
+          return (b.created_at || 0) - (a.created_at || 0);
+        });
+      } else {
+        fetchedListings.sort(
+          (a, b) => (b.created_at || 0) - (a.created_at || 0),
+        );
       }
-      fetchedListings.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
       setListings(fetchedListings);
     } catch (error) {
