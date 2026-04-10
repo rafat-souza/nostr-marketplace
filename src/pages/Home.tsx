@@ -82,8 +82,23 @@ export default function Home() {
         }
 
         const { lat, lon } = geoData[0];
-        const regionHash = geohash.encode(parseFloat(lat), parseFloat(lon), 4); // 39km x 19km
-        filter["#g"] = [regionHash];
+        const parsedLat = parseFloat(lat);
+        const parsedLon = parseFloat(lon);
+
+        const baseHash = geohash.encode(parsedLat, parsedLon, 8);
+
+        const hashPrecisions = [3, 4, 5, 6, 7, 8].map((len) =>
+          baseHash.substring(0, len),
+        );
+
+        const level4Hash = baseHash.substring(0, 4);
+        const neighbors = geohash.neighbors(level4Hash);
+
+        const finalHashes = Array.from(
+          new Set([...hashPrecisions, ...neighbors]),
+        );
+
+        filter["#g"] = finalHashes;
       }
 
       const fetchPromise = ndk.fetchEvents(filter);
