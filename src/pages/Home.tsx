@@ -24,7 +24,7 @@ export default function Home() {
       try {
         const filter = {
           kinds: [30402],
-          limit: 20,
+          limit: 500,
         };
 
         const fetchPromise = ndk.fetchEvents(filter);
@@ -33,7 +33,13 @@ export default function Home() {
         );
 
         const events = await Promise.race([fetchPromise, timeoutPromise]);
-        const sortedAndLimitedEvents = Array.from(events)
+
+        let fetchedListings = Array.from(events);
+        fetchedListings = fetchedListings.filter((event) =>
+          event.tags.some((t) => t[0] === "g"),
+        );
+
+        const sortedAndLimitedEvents = fetchedListings
           .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
           .slice(0, 20);
 
@@ -57,7 +63,7 @@ export default function Home() {
     try {
       const filter: NDKFilter = {
         kinds: [30402],
-        limit: 300,
+        limit: 500,
       };
 
       if (region) {
@@ -87,6 +93,10 @@ export default function Home() {
 
       const events = await Promise.race([fetchPromise, timeoutPromise]);
       let fetchedListings = Array.from(events);
+
+      fetchedListings = fetchedListings.filter((event) =>
+        event.tags.some((t) => t[0] === "g"),
+      );
 
       if (productSearch) {
         const normalizeStr = (str: string) =>
