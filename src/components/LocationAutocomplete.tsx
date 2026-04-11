@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 interface LocationOption {
   place_id: number;
   display_name: string;
+  addresstype?: string;
   lat: string;
   lon: string;
   name?: string;
@@ -30,8 +31,20 @@ const formatLocation = (opt: LocationOption) => {
   const state = opt.address.state || "";
   const country = opt.address.country || "";
 
-  const parts = [local, state, country].filter(Boolean).map((p) => p.trim());
-  return Array.from(new Set(parts)).join(", ");
+  const parts: string[] = [];
+
+  if (local) parts.push(local.trim());
+
+  if (state) {
+    if (opt.addresstype === "state" && state.trim() === local.trim()) {
+    } else {
+      parts.push(state.trim());
+    }
+  }
+
+  if (country) parts.push(country.trim());
+
+  return parts.join(", ");
 };
 
 interface LocationAutocompleteProps {
@@ -62,9 +75,20 @@ export function LocationAutocomplete({
       const data = await response.json();
 
       if (data && data.length > 0) {
-        setLocationOptions(data);
+        const uniqueOptions: LocationOption[] = [];
+        const seenNames = new Set<string>();
+
+        for (const opt of data) {
+          const shortName = formatLocation(opt);
+          if (!seenNames.has(shortName)) {
+            seenNames.add(shortName);
+            uniqueOptions.push({ ...opt, display_name: shortName });
+          }
+        }
+
+        setLocationOptions(uniqueOptions);
       } else {
-        toast.error("No regions found");
+        toast.error("No region found");
         setLocationOptions([]);
       }
     } catch (error) {

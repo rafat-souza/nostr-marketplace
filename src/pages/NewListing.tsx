@@ -265,7 +265,7 @@ export function NewListing() {
             Item Location
           </label>
           <LocationAutocomplete
-            placeholder="City, Neighborhood, or State (e.g. São Paulo, SP)"
+            placeholder="City, Neighborhood, or State (e.g. São Paulo)"
             onSelect={(location) => setSelectedLocation(location)}
           />
           <p className="text-xs text-muted-foreground mt-1.5">
