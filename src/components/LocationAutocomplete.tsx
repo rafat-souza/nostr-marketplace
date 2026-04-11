@@ -6,7 +6,33 @@ interface LocationOption {
   display_name: string;
   lat: string;
   lon: string;
+  name?: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    suburb?: string;
+    state?: string;
+    country?: string;
+  };
 }
+
+const formatLocation = (opt: LocationOption) => {
+  if (!opt.address) return opt.display_name;
+
+  const local =
+    opt.address.city ||
+    opt.address.town ||
+    opt.address.village ||
+    opt.address.suburb ||
+    opt.name ||
+    opt.display_name.split(",")[0];
+  const state = opt.address.state || "";
+  const country = opt.address.country || "";
+
+  const parts = [local, state, country].filter(Boolean).map((p) => p.trim());
+  return Array.from(new Set(parts)).join(", ");
+};
 
 interface LocationAutocompleteProps {
   onSelect: (location: LocationOption | null) => void;
@@ -31,7 +57,7 @@ export function LocationAutocomplete({
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           locationInput,
-        )}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}`,
+        )}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}&addressdetails=1`,
       );
       const data = await response.json();
 
@@ -50,9 +76,10 @@ export function LocationAutocomplete({
   };
 
   const handleSelectOption = (option: LocationOption) => {
+    const shortName = formatLocation(option);
     setLocationInput(option.display_name);
     setLocationOptions([]);
-    onSelect(option);
+    onSelect({ ...option, display_name: shortName });
   };
 
   return (
@@ -98,7 +125,7 @@ export function LocationAutocomplete({
               className="p-3 hover:bg-accent hover:text-accent-foreground text-sm border-b border-border 
               last:border-0 cursor-pointer"
             >
-              {opt.display_name}
+              {formatLocation(opt)}
             </li>
           ))}
         </ul>
