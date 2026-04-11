@@ -22,8 +22,14 @@ export function ListingCard({ event }: ListingCardProps) {
   const price =
     event.tags.find((t) => t[0] === "price")?.[1] || "Price upon request";
   const currency = event.tags.find((t) => t[0] === "price")?.[2] || "";
-  const location =
-    event.tags.find((t) => t[0] === "location")?.[1] || "Unknown location";
+  const fullLocation =
+    event.tags.find((t) => t[0] === "location")?.[1] ||
+    event.tags.find((t) => t[0] === "l")?.[1] ||
+    "Unknown location";
+  const shortLocation =
+    fullLocation !== "Unknown location" && fullLocation.includes(",")
+      ? fullLocation.split(",").slice(0, 2).join(",").trim()
+      : fullLocation;
   const imageUrl = event.tags.find((t) => t[0] === "image")?.[1];
 
   const sellerName = profile?.name || profile?.displayName || "Anonymous";
@@ -92,7 +98,7 @@ export function ListingCard({ event }: ListingCardProps) {
               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <span className="truncate">{location}</span>
+          <span className="truncate">{shortLocation}</span>
         </div>
 
         <div className="pt-3 border-t border-border flex items-center gap-3">

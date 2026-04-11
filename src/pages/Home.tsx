@@ -87,7 +87,7 @@ export default function Home() {
 
         const baseHash = geohash.encode(parsedLat, parsedLon, 8);
 
-        const hashPrecisions = [3, 4, 5, 6, 7, 8].map((len) =>
+        const hashPrecisions = [4, 5, 6, 7, 8].map((len) =>
           baseHash.substring(0, len),
         );
 

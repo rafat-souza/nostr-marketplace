@@ -6,17 +6,19 @@ import toast from "react-hot-toast";
 
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
+import { LocationAutocomplete } from "../components/LocationAutocomplete";
 
 interface ListingFormData {
   title: string;
   summary: string;
   price: string;
   currency: string;
-  locationName: string;
   imageUrls: string[];
 }
 
-interface NominatimResponse {
+interface SelectedLocation {
+  place_id: number;
+  display_name: string;
   lat: string;
   lon: string;
 }
@@ -32,17 +34,18 @@ interface NostrBuildResponse {
 export function NewListing() {
   const { ndk } = useNDK();
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedLocation, setSelectedLocation] =
+    useState<SelectedLocation | null>(null);
   const [formData, setFormData] = useState<ListingFormData>({
     title: "",
     summary: "",
     price: "",
     currency: "USD",
-    locationName: "",
     imageUrls: [],
   });
+  const navigate = useNavigate();
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -122,41 +125,37 @@ export function NewListing() {
       return;
     }
 
+    if (!selectedLocation) {
+      toast.error("Please search and select a location from the dropdown");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const geoResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}&email=${import.meta.env.VITE_NOMINATIM_EMAIL}`,
-        { headers: { Accept: "application/json" } },
-      );
-
-      if (!geoResponse.ok) throw new Error("Error in nominatim API");
-      const geoData = (await geoResponse.json()) as NominatimResponse[];
-
-      if (!geoData || geoData.length === 0) {
-        toast.error("Local not found. Type a valid region");
-        setIsLoading(false);
-        return;
-      }
-
-      const { lat, lon } = geoData[0];
+      const parsedLat = parseFloat(selectedLocation.lat);
+      const parsedLon = parseFloat(selectedLocation.lon);
 
       const encodeGeohash = geohash.encode || (geohash as any).default?.encode;
-      const regionHash = encodeGeohash(parseFloat(lat), parseFloat(lon), 4);
+
+      const fullHash = encodeGeohash(parsedLat, parsedLon, 8);
 
       const event = new NDKEvent(ndk);
       event.kind = 30402;
       event.content = formData.summary;
-
-      console.log("Geohash:", regionHash);
 
       const tags = [
         ["d", crypto.randomUUID()],
         ["title", formData.title],
         ["summary", formData.summary],
         ["price", formData.price, formData.currency],
-        ["location", formData.locationName],
-        ["g", regionHash],
+        ["location", selectedLocation.display_name],
+
+        ["g", fullHash.substring(0, 4)],
+        ["g", fullHash.substring(0, 5)],
+        ["g", fullHash.substring(0, 6)],
+        ["g", fullHash.substring(0, 7)],
+        ["g", fullHash.substring(0, 8)],
       ];
 
       formData.imageUrls.forEach((url) => {
@@ -171,7 +170,9 @@ export function NewListing() {
       navigate("/");
     } catch (error) {
       console.error("Failed to post: ", error);
-      toast.error("Error posting the product. Check your connection");
+      toast.error(
+        "Failed to post the product. Allow your browser extension to post",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -218,8 +219,7 @@ export function NewListing() {
             onChange={(e) =>
               setFormData({ ...formData, summary: e.target.value })
             }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 
-            focus:ring-ring focus:border-ring resize-none"
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring resize-none"
           />
         </div>
 
@@ -238,8 +238,7 @@ export function NewListing() {
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 
-              focus:ring-ring focus:border-ring"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
             />
           </div>
           <div className="w-1/3">
@@ -251,8 +250,7 @@ export function NewListing() {
               onChange={(e) =>
                 setFormData({ ...formData, currency: e.target.value })
               }
-              className="w-full p-2 rounded bg-background border border-input focus:ring-2 
-              focus:ring-ring focus:border-ring cursor-pointer"
+              className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring cursor-pointer"
             >
               <option value="BRL">BRL (R$)</option>
               <option value="USD">USD ($)</option>
@@ -266,15 +264,9 @@ export function NewListing() {
           <label className="block text-sm font-medium mb-1 text-foreground">
             Item Location
           </label>
-          <input
-            required
-            type="text"
+          <LocationAutocomplete
             placeholder="City, Neighborhood, or State (e.g. São Paulo, SP)"
-            value={formData.locationName}
-            onChange={(e) =>
-              setFormData({ ...formData, locationName: e.target.value })
-            }
-            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring"
+            onSelect={(location) => setSelectedLocation(location)}
           />
           <p className="text-xs text-muted-foreground mt-1.5">
             Used to generate a geohash for local search.
@@ -301,8 +293,7 @@ export function NewListing() {
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100
-                    flex items-center justify-center transition-opacity text-sm font-semibold cursor-pointer"
+                    className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-sm font-semibold cursor-pointer"
                   >
                     Remove
                   </button>
@@ -314,10 +305,9 @@ export function NewListing() {
           <div className="flex items-center justify-center w-full">
             <label
               htmlFor="image-upload"
-              className={`flex flex-col items-center justify-center w-full h-50 border-2 
-                border-dashed rounded-lg cursor-pointer bg-muted/20 border-input hover:bg-muted/40 transition-colors
-                ${isUploadingImage ? "opacity-60 cursor-not-allowed" : ""}
-              `}
+              className={`flex flex-col items-center justify-center w-full h-50 border-2 border-dashed rounded-lg cursor-pointer bg-muted/20 border-input hover:bg-muted/40 transition-colors ${
+                isUploadingImage ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                 {isUploadingImage ? (
@@ -341,8 +331,7 @@ export function NewListing() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="1.5"
-                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 
-                        5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                       />
                     </svg>
                     <p className="mb-2 text-sm text-muted-foreground">
@@ -373,8 +362,7 @@ export function NewListing() {
         <button
           type="submit"
           disabled={isLoading || isUploadingImage}
-          className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground 
-          hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+          className="mt-6 w-full rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
         >
           {isLoading ? "Publishing to Nostr..." : "Publish Product Listing"}
         </button>

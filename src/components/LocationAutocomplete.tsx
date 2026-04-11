@@ -54,3 +54,55 @@ export function LocationAutocomplete({
     setLocationOptions([]);
     onSelect(option);
   };
+
+  return (
+    <div className="relative flex-1 w-full">
+      <div className="flex">
+        <input
+          type="text"
+          value={locationInput}
+          onChange={(e) => {
+            setLocationInput(e.target.value);
+            onSelect(null);
+          }}
+          placeholder={placeholder}
+          className="w-full p-2 rounded-l bg-background border border-input text-foreground focus:outline-none
+          "
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleFetchLocationOptions();
+            }
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleFetchLocationOptions}
+          disabled={isSearchingLocation || !locationInput}
+          className="bg-secondary px-3 py-2 rounded-r border border-l-0 border-input hover:bg-secondary/80
+          disabled:opacity-50 text-secondary-foreground cursor-pointer"
+        >
+          {isSearchingLocation ? "Searching..." : "Search"}
+        </button>
+      </div>
+
+      {locationOptions.length > 0 && (
+        <ul
+          className="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-card border border-border
+        rounded shadow-lg"
+        >
+          {locationOptions.map((opt) => (
+            <li
+              key={opt.place_id}
+              onClick={() => handleSelectOption(opt)}
+              className="p-3 hover:bg-accent hover:text-accent-foreground text-sm border-b border-border 
+              last:border-0 cursor-pointer"
+            >
+              {opt.display_name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
