@@ -217,14 +217,14 @@ export default function Home() {
         <h2 className="text-xl font-bold mb-4">
           What and where are you looking for?
         </h2>
+
         <div className="flex flex-col md:flex-row gap-3">
           <input
             type="text"
             value={productSearch}
             onChange={(e) => setProductSearch(e.target.value)}
             placeholder="Search for a product (e.g. smartphone, bicycle...)"
-            className="flex-[2] p-2 rounded bg-background border border-input text-foreground
-           focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-[2] p-2 rounded bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <input
@@ -232,19 +232,124 @@ export default function Home() {
             value={region}
             onChange={(e) => setRegion(e.target.value)}
             placeholder="City or neighborhood..."
-            className="flex-[1] p-2 rounded bg-background border border-input text-foreground
-            focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-[1] p-2 rounded bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
-          <button
-            onClick={handleSearch}
-            disabled={isLoadingSearch || (!region && !productSearch)}
-            className="rounded bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90
-            disabled:opacity-50 cursor-pointer whitespace-nowrap"
-          >
-            {isLoadingSearch ? "Searching..." : "Search"}
-          </button>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`rounded px-4 py-2 border transition-colors flex items-center justify-center gap-2 cursor-pointer
+                ${
+                  showFilters
+                    ? "bg-accent border-accent text-accent-foreground"
+                    : "bg-background border-input text-foreground hover:bg-accent"
+                }`}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={handleSearch}
+              disabled={
+                isLoadingSearch ||
+                (!region && !productSearch && !filters.category)
+              }
+              className="rounded bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50 cursor-pointer whitespace-nowrap font-medium"
+            >
+              {isLoadingSearch ? "Searching..." : "Search"}
+            </button>
+          </div>
         </div>
+
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-2 fade-in duration-200">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Category
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() =>
+                      setFilters({
+                        ...filters,
+                        category: filters.category === cat ? "" : cat,
+                      })
+                    }
+                    className={`px-3 py-1 text-sm rounded-full border transition-colors cursor-pointer
+                      ${
+                        filters.category === cat
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "bg-background border-input text-foreground hover:bg-accent"
+                      }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Price Range
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={filters.minPrice}
+                  onChange={(e) =>
+                    setFilters({ ...filters, minPrice: e.target.value })
+                  }
+                  className="w-full p-2 rounded bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                />
+                <span className="text-muted-foreground">-</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={filters.maxPrice}
+                  onChange={(e) =>
+                    setFilters({ ...filters, maxPrice: e.target.value })
+                  }
+                  className="w-full p-2 rounded bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Currency
+              </label>
+              <select
+                value={filters.currency}
+                onChange={(e) =>
+                  setFilters({ ...filters, currency: e.target.value })
+                }
+                className="w-full p-2 rounded bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm cursor-pointer"
+              >
+                <option value="">All Currencies</option>
+                <option value="USD">USD ($)</option>
+                <option value="BRL">BRL (R$)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="BTC">BTC (₿)</option>
+                <option value="SATS">SATS</option>
+              </select>
+            </div>
+          </div>
+        )}
       </section>
 
       {hasSearched ? (
