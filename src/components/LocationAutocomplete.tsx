@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 
 interface LocationOption {
@@ -60,6 +60,25 @@ export function LocationAutocomplete({
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setLocationOptions([]);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleFetchLocationOptions = async () => {
     if (!locationInput) return;
 
@@ -107,7 +126,7 @@ export function LocationAutocomplete({
   };
 
   return (
-    <div className="relative flex-1 w-full">
+    <div ref={wrapperRef} className="relative flex-1 w-full">
       <div className="flex">
         <input
           type="text"
