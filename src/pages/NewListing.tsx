@@ -13,6 +13,7 @@ interface ListingFormData {
   summary: string;
   price: string;
   currency: string;
+  category: string;
   imageUrls: string[];
 }
 
@@ -43,6 +44,7 @@ export function NewListing() {
     summary: "",
     price: "",
     currency: "USD",
+    category: "",
     imageUrls: [],
   });
   const navigate = useNavigate();
@@ -158,6 +160,18 @@ export function NewListing() {
         ["g", fullHash.substring(0, 8)],
       ];
 
+      if (formData.category) {
+        const normalizedCategory = formData.category
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+        tags.push(["t", normalizedCategory]);
+      }
+
+      formData.imageUrls.forEach((url) => {
+        tags.push(["image", url]);
+      });
+
       formData.imageUrls.forEach((url) => {
         tags.push(["image", url]);
       });
@@ -221,6 +235,31 @@ export function NewListing() {
             }
             className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring resize-none"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-foreground">
+            Category
+          </label>
+          <select
+            required
+            value={formData.category}
+            onChange={(e) =>
+              setFormData({ ...formData, category: e.target.value })
+            }
+            className="w-full p-2 rounded bg-background border border-input focus:ring-2 focus:ring-ring focus:border-ring cursor-pointer"
+          >
+            <option value="" disabled>
+              Select a category
+            </option>
+            <option value="Electronics">Electronics</option>
+            <option value="Vehicles">Vehicles</option>
+            <option value="Furniture">Furniture</option>
+            <option value="Services">Services</option>
+            <option value="Food">Food</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Others">Others</option>
+          </select>
         </div>
 
         <div className="flex gap-4">
