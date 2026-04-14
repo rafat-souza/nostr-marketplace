@@ -293,6 +293,7 @@ export function NewListing() {
             >
               <option value="BRL">BRL (R$)</option>
               <option value="USD">USD ($)</option>
+              <option value="USD">EUR (€)</option>
               <option value="BTC">BTC (₿)</option>
               <option value="SATS">SATS</option>
             </select>

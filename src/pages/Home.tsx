@@ -6,6 +6,16 @@ import toast from "react-hot-toast";
 import { useNDK } from "../providers/NDKProvider";
 import { ListingCard } from "../components/ListingCard";
 
+const CATEGORIES = [
+  "Electronics",
+  "Vehicles",
+  "Furniture",
+  "Services",
+  "Food",
+  "Fashion",
+  "Others",
+];
+
 export default function Home() {
   const { ndk } = useNDK();
   const [productSearch, setProductSearch] = useState("");
@@ -15,6 +25,13 @@ export default function Home() {
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [listings, setListings] = useState<NDKEvent[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    category: "",
+    currency: "",
+    minPrice: "",
+    maxPrice: "",
+  });
 
   useEffect(() => {
     if (!ndk) return;
@@ -55,7 +72,7 @@ export default function Home() {
   }, [ndk]);
 
   const handleSearch = async () => {
-    if ((!region && !productSearch) || !ndk) return;
+    if ((!region && !productSearch && !filters.category) || !ndk) return;
     setIsLoadingSearch(true);
     setListings([]);
     setHasSearched(true);
@@ -65,6 +82,15 @@ export default function Home() {
         kinds: [30402],
         limit: 500,
       };
+
+      if (filters.category) {
+        filter["#t"] = [
+          filters.category
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase(),
+        ];
+      }
 
       if (region) {
         const geoResponse = await fetch(
@@ -153,6 +179,27 @@ export default function Home() {
         fetchedListings.sort(
           (a, b) => (b.created_at || 0) - (a.created_at || 0),
         );
+      }
+
+      if (filters.minPrice || filters.maxPrice || filters.currency) {
+        fetchedListings = fetchedListings.filter((event) => {
+          const priceTag = event.tags.find((t) => t[0] === "price");
+          if (!priceTag || !priceTag[1]) return false;
+
+          if (filters.currency && priceTag[2] !== filters.currency) {
+            return false;
+          }
+
+          const itemPrice = parseFloat(priceTag[1]);
+          if (isNaN(itemPrice)) return false;
+
+          const min = filters.minPrice ? parseFloat(filters.minPrice) : 0;
+          const max = filters.maxPrice
+            ? parseFloat(filters.maxPrice)
+            : Infinity;
+
+          return itemPrice >= min && itemPrice <= max;
+        });
       }
 
       setListings(fetchedListings);
