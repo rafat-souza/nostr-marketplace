@@ -30,7 +30,11 @@ export default function App() {
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       <header className="shrink-0 border-b bg-card p-4 shadow-sm z-50">
         <div className="container flex justify-between mx-auto">
-          <NavLink to="/" className="text-2xl font-bold" reloadDocument>
+          <NavLink
+            to="/"
+            className="text-2xl font-bold flex items-center"
+            reloadDocument
+          >
             Nostr Marketplace
           </NavLink>
           <div className="flex items-center gap-8">
