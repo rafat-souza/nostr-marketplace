@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 import { useNDK } from "../providers/NDKProvider";
 import { useAuth } from "../providers/AuthProvider";
+import { useChatStore } from "../store/chatStore";
 
 export function ListingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +77,14 @@ export function ListingDetail() {
       toast.error("You must be logged in to contact the seller.");
       return;
     }
-    toast("Chat system coming soon!", { icon: "💬" });
+
+    const { setActiveContact, setIsOpen, addOrUpdateContact } =
+      useChatStore.getState();
+    addOrUpdateContact(event.pubkey, {
+      profile: profile || undefined,
+    });
+    setActiveContact(event.pubkey);
+    setIsOpen(true);
   };
 
   return (
