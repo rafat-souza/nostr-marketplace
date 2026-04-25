@@ -146,7 +146,7 @@ export function Profile() {
       {/* Product Listing */}
       <section>
         <h3 className="text-xl font-bold mb-4 border-b border-border pb-2">
-          My Advertisements
+          My Listings
         </h3>
 
         {listings.length === 0 ? (
