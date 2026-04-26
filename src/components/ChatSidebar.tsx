@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { MessageSquare, ChevronLeft, X, Send, User } from "lucide-react";
+
 import { useChatStore } from "../store/chatStore";
 import { useChat } from "../hooks/useChat";
 import { useAuth } from "../providers/AuthProvider";
-import { MessageSquare, ChevronLeft, Send, X, User } from "lucide-react";
 
 export function ChatSidebar() {
   const { currentUser } = useAuth();
@@ -14,10 +16,10 @@ export function ChatSidebar() {
     setActiveContact,
     markAsRead,
   } = useChatStore();
-
   const { sendMessage, activeContactMessages } = useChat();
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,6 +42,12 @@ export function ChatSidebar() {
     if (success) {
       setInputValue("");
     }
+  };
+
+  const handleGoToProfile = () => {
+    if (!activeContact) return;
+    toggleOpen();
+    navigate(`/seller/${activeContact}`);
   };
 
   const activeContactData = contacts.find((c) => c.pubkey === activeContact);
@@ -82,28 +90,39 @@ export function ChatSidebar() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              {activeContactData.profile?.image ||
-              activeContactData.profile?.picture ? (
-                <img
-                  src={
-                    activeContactData.profile.image ||
-                    activeContactData.profile.picture
-                  }
-                  alt="Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
+              <button
+                onClick={handleGoToProfile}
+                className="flex flex-1 items-center gap-3 min-w-0 text-left hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                {activeContactData.profile?.image ||
+                activeContactData.profile?.picture ? (
+                  <img
+                    src={
+                      activeContactData.profile.image ||
+                      activeContactData.profile.picture
+                    }
+                    alt="Avatar"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">
+                    {activeContactData.profile?.name ||
+                      activeContactData.profile?.displayName ||
+                      `${activeContactData.pubkey.slice(0, 8)}...`}
+                  </p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">
-                  {activeContactData.profile?.name ||
-                    activeContactData.profile?.displayName ||
-                    `${activeContactData.pubkey.slice(0, 8)}...`}
-                </p>
-              </div>
+              </button>
+              <button
+                onClick={toggleOpen}
+                className="p-1 ml-2 rounded hover:bg-muted text-muted-foreground transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Messages */}

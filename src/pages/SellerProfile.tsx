@@ -70,9 +70,8 @@ export function SellerProfile() {
     );
 
   const avatar = profile?.image || profile?.picture;
-  const name = profile?.name || profile?.displayName || "Usuário Anônimo";
-  const bio =
-    profile?.about || "Este vendedor ainda não adicionou uma biografia.";
+  const name = profile?.name || profile?.displayName || "Anonymous user";
+  const bio = profile?.about || "This user still didn't add a bio.";
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -126,7 +125,7 @@ export function SellerProfile() {
 
         {listings.length === 0 ? (
           <p className="text-muted-foreground bg-muted/20 p-6 rounded-lg text-center border border-border border-dashed">
-            This seller still doesn't have active listings.
+            This user still doesn't have active listings.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
